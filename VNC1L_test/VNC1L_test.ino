@@ -1,4 +1,5 @@
 
+// VNC1L Test sketch
 
 #define VNC1L_BAUD_RATE 9600
 #define DEBUG_BAUD_RATE 9600
@@ -71,11 +72,11 @@ void loop() {
       getFirmwareVersion();
 
     } else if ( inputValue == 111 ) {  // o
-      testOpen();
+      openw("FABOTEST.TXT");
     } else if ( inputValue ==  99 ) {  // c
-      testClose();
+      close("FABOTEST.TXT");
     } else if ( inputValue == 119 ) {  // w
-      tWri1("ABC");
+      write("FaBo Test");
     } else if ( inputValue == 100 ) {  // d
       dir();
     } else if ( inputValue == 122 ) {  // z
@@ -157,7 +158,7 @@ bool returnCheckSCS() {
 
   while (VNC1L.available() > 0 ) {
     VNC1L.readBytesUntil(0x0d, buff, VNC1L.available());
-//    Debug.println(buff);
+    Debug.println(buff);
     if ( strcmp(buff, ">") == 0 ) {
       flg = true;
     }
@@ -177,9 +178,9 @@ void retOut() {
   while (VNC1L.available() > 0 ) {
     VNC1L.readBytesUntil(0x0d, buff, VNC1L.available());
     if ( strcmp(buff, "D:\\>") == 0 ) {
-      // Nothing
+      Debug.println("OK");
     } else if ( strcmp(buff, ">") == 0 ) {
-      // Nothing
+      Debug.println("OK");
     } else {
       Debug.println(buff);
     }
@@ -188,6 +189,10 @@ void retOut() {
 }
 
 void getFirmwareVersion() {
+
+  Debug.println();
+  Debug.println("[[[ getFirmwareVersion() ]]]");
+
 //  VNC1L.write("FWV"); // ECS command
   VNC1L.write(0x13); // SCS command
   VNC1L.write(13);
@@ -196,9 +201,70 @@ void getFirmwareVersion() {
 }
 
 void dir() {
+
+  Debug.println();
+  Debug.println("[[[ dir() ]]]");
+
 //  VNC1L.write("DIR"); // ECS command
   VNC1L.write(0x01); // SCS command
   VNC1L.write(13);
+  delay(100);
+  retOut();
+}
+
+void openw(char* filename) {
+
+  Debug.println();
+  Debug.print("[[[ openw(");
+  Debug.print(filename);
+  Debug.println(") ]]]");
+
+  // file open
+  VNC1L.write(0x09);
+  VNC1L.write(0x20);
+  VNC1L.print(filename);
+  VNC1L.write(0x0D);
+  delay(100);
+  retOut();
+}
+
+void close(char* filename) {
+
+  Debug.println();
+  Debug.print("[[[ close(");
+  Debug.print(filename);
+  Debug.println(") ]]]");
+
+  // file close
+  VNC1L.write(0x0A);
+  VNC1L.write(0x20);
+  VNC1L.print(filename);
+  VNC1L.write(0x0D);
+  delay(100);
+  retOut();
+}
+
+void write(char* data) {
+  Debug.println();
+  Debug.println("[[[ write() ]]]");
+
+  int len = strlen(data);
+
+  Debug.print("[");
+  Debug.print(data);
+  Debug.print("]");
+  Debug.print("(");
+  Debug.print(len);
+  Debug.print(")");
+  Debug.println();
+
+  // write data
+  VNC1L.write(0x08);
+  VNC1L.write(0x20);
+  VNC1L.print(len);
+  VNC1L.write(0x0D);
+  VNC1L.print(data);
+
   delay(100);
   retOut();
 }

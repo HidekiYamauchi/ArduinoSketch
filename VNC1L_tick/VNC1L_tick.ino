@@ -1,5 +1,5 @@
 
-// VNC1L Test tick
+// VNC1L tick test
 
 #define VNC1L_BAUD_RATE 9600
 #define DEBUG_BAUD_RATE 9600
@@ -7,7 +7,9 @@
 #define Debug Serial
 #define VNC1L Serial1
 
-char buff[65];
+bool debug = true;
+
+char buff[128];
 char response[64];
 int cnti;
 
@@ -34,78 +36,80 @@ void setup() {
 
   Debug.println(":::::VNC1L Online:::::");
 
-  // send IPA
-  VNC1L.print("IPA");
-  VNC1L.write(13);
-
-  while ( ! returnCheckECS() ) {
-    Debug.println(":::::send IPA:::::");
-    delay(500);
-  }
-  Debug.println(":::::done IPA:::::");
-
-  // send SCS
-  VNC1L.print("SCS");
-  VNC1L.write(13);
+  // send IPH
+  VNC1L.write(0x91); // IPH
+  VNC1L.write(0x0D);
 
   while ( ! returnCheckSCS() ) {
-    Debug.println(":::::send SCS:::::");
+    Debug.println(":::send IPA/IPH:::");
     delay(500);
   }
-  Debug.println(":::::done SCS:::::");
+  Debug.println(":::done IPA/IPH:::");
 
   Debug.println(":::::Setup DONE:::::");
-
-  Debug.println();
-  Debug.println(":::::show Version:::::");
-  // firmware version
-  getFirmwareVersion();
 
   Debug.println();
   Debug.println(":::::Loop START:::::");
 }
 
 void loop() {
+  int inputValue = 0;
 
   tick1();
-
   
   if(Debug.available() > 0) {
-    int inputValue = Debug.read();
+    inputValue = Debug.read();
 
-    if ( inputValue == 102 ) {  // f
-      getFirmwareVersion();
-
-    } else if ( inputValue == 100 ) {  // d
-      dir();
-    } else if ( inputValue == 101 ) {  // e
-      dir2();
+    switch (inputValue) {
+      case 100: // d: DIR
+        scsDIR();
+        break;
+      case 102: // f: Firm Ver
+        scsFWV();
+        break;
     }
   }
-
 }
 
-///////////////////////////////////////////////////////////////////
-
+///////////////////////////////////////////////////////////////////////////////
 
 void usbReceive(char* message) {
-  Debug.println(message);
+
+  if ( strcmp(message, ">") == 0 ) {
+    debugPrint("<<< SCS PROMPT >>>");
+  } else {
+    debugPrint(message);
+  }
 
 }
 
 void tick1() {
   if ( VNC1L.available() > 0 ) {
     response[cnti] = VNC1L.read();
-    if ( cnti > 30 || response[cnti] == 13 ) {
+    if ( cnti > 30 || response[cnti] == '\r' ) {
       response[cnti+1] = 0;
       char msg[cnti+1];
       strcpy(msg, response);
       cnti = 0;
-      usbReceive(msg);
+      usbReceive(response);
 
     } else {
       cnti++;
     }
+  }
+}
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+void debugPrint(char* message) {
+  if (debug) {
+    Debug.print(">>>>> DEBUG: [");
+    Debug.print(message);
+    Debug.println("]");
   }
 }
 
@@ -115,25 +119,10 @@ bool checkOnline() {
   
   while (VNC1L.available() > 0 ) {
     strLog = VNC1L.readString();
-    Debug.println(strLog);
+    debugPrint(strLog.c_str());
     if ( strLog.indexOf("On-Line:") > 0 ) {
       flg = true;
     }
-  }
-
-  return flg;
-}
-
-bool returnCheckECS() {
-  bool flg = false;
-
-  while (VNC1L.available() > 0 ) {
-    VNC1L.readBytesUntil(0x0d, buff, VNC1L.available());
-    Debug.println(buff);
-    if ( strcmp(buff, "D:\\>") == 0 ) {
-      flg = true;
-    }
-    clearBuffer();
   }
 
   return flg;
@@ -144,7 +133,7 @@ bool returnCheckSCS() {
 
   while (VNC1L.available() > 0 ) {
     VNC1L.readBytesUntil(0x0d, buff, VNC1L.available());
-    Debug.println(buff);
+    debugPrint(buff);
     if ( strcmp(buff, ">") == 0 ) {
       flg = true;
     }
@@ -160,54 +149,27 @@ void clearBuffer() {
   }
 }
 
-void retOut() {
-  while (VNC1L.available() > 0 ) {
-    VNC1L.readBytesUntil(0x0d, buff, VNC1L.available());
-    if ( strcmp(buff, "D:\\>") == 0 ) {
-      Debug.println("OK");
-    } else if ( strcmp(buff, ">") == 0 ) {
-      Debug.println("OK");
-    } else {
-      Debug.println(buff);
-    }
-    clearBuffer();
-  }
-}
 
-void getFirmwareVersion() {
 
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+void scsFWV() {
   Debug.println();
-  Debug.println("[[[ getFirmwareVersion() ]]]");
-
-//  VNC1L.write("FWV"); // ECS command
-  VNC1L.write(0x13); // SCS command
-  VNC1L.write(13);
-//  delay(100);
-//  retOut();
-}
-
-void dir() {
-
+  Debug.println("::: scsFWV() :::");
   Debug.println();
-  Debug.println("[[[ dir() ]]]");
 
-//  VNC1L.write("DIR"); // ECS command
-  VNC1L.write(0x01); // SCS command
-  VNC1L.write(13);
-//  delay(100);
-//  retOut();
+  VNC1L.write(0x13); // FWV
+  VNC1L.write(0x0D);
 }
 
-void dir2() {
+void scsDIR() {
   Debug.println();
-  Debug.println("[[[ dir2() ]]]");
+  Debug.println("::: scsDIR() :::");
+  Debug.println();
 
-  VNC1L.write(0x01); // SCS command
-  VNC1L.write(0x20);
-  VNC1L.print("FABOTEST.TXT");
-  VNC1L.write(13);
-//  delay(100);
-//  retOut();
+  VNC1L.write(0x01); // DIR
+  VNC1L.write(0x0D);
 }
-
 

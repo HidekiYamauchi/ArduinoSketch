@@ -13,6 +13,8 @@ char buff[128];
 char response[64];
 int cntTick = 0;
 
+bool flgDisk = false;
+
 void setup() {
   Debug.begin(DEBUG_BAUD_RATE);
   VNC1L.begin(VNC1L_BAUD_RATE);
@@ -74,6 +76,15 @@ void loop() {
       case 109: // m: mkdir filename
         scsMKD("SAMPLE");
         break;
+      case 111: // o: open filename for write
+        scsOPW("FABOTEST.TXT");
+        break;
+      case 119: // w: write data
+        scsWRF("FaBo Test !");
+        break;
+      case 120: // x: close filename
+        scsCLF("FABOTEST.TXT");
+        break;
     }
   }
 }
@@ -95,6 +106,20 @@ void usbReceive(char* message) {
     debugPrint("<<< No Disk >>>");
   } else if ( strcmp(message, "CF\r") == 0 ) {
     debugPrint("<<< Command Failed >>>");
+  } else if ( strcmp(message, "BC\r") == 0 ) {
+    debugPrint("<<< Bad Command >>>");
+  } else if ( strcmp(message, "DF\r") == 0 ) {
+    debugPrint("<<< Disk Full >>>");
+  } else if ( strcmp(message, "FI\r") == 0 ) {
+    debugPrint("<<< Filename Invalid >>>");
+  } else if ( strcmp(message, "RO\r") == 0 ) {
+    debugPrint("<<< Read Only >>>");
+  } else if ( strcmp(message, "FO\r") == 0 ) {
+    debugPrint("<<< File Opened >>>");
+  } else if ( strcmp(message, "NE\r") == 0 ) {
+    debugPrint("<<< Dir Not Empty >>>");
+  } else if ( strcmp(message, "FN\r") == 0 ) {
+    debugPrint("<<< Filename Invalid >>>");
   } else {
     debugPrint(message);
   }
@@ -195,7 +220,7 @@ void scsCD() {
   Debug.println("::: scsCD(..) :::");
   Debug.println();
 
-  VNC1L.write(0x02); // CD
+  VNC1L.write(0x02); // CD .. / up directory
   VNC1L.write(0x20);
   VNC1L.write(0x2E);
   VNC1L.write(0x2E);
@@ -223,6 +248,48 @@ void scsMKD(char* filename) {
   Debug.println();
 
   VNC1L.write(0x06); // MKD
+  VNC1L.write(0x20);
+  VNC1L.print(filename);
+  VNC1L.write(0x0D);
+}
+
+void scsOPW(char* filename) {
+  Debug.println();
+  Debug.print("::: scsOPW(");
+  Debug.print(filename);
+  Debug.println(") :::");
+  Debug.println();
+
+  VNC1L.write(0x09); // OPW
+  VNC1L.write(0x20);
+  VNC1L.print(filename);
+  VNC1L.write(0x0D);
+}
+
+void scsWRF(char* data) {
+  Debug.println();
+  Debug.print("::: scsWRF(");
+  Debug.print(data);
+  Debug.println(") :::");
+  Debug.println();
+
+  int dataLen = strlen(data);
+
+  VNC1L.write(0x08); // WRF
+  VNC1L.write(0x20);
+  VNC1L.print(dataLen);
+  VNC1L.write(0x0D);
+  VNC1L.print(data);
+}
+
+void scsCLF(char* filename) {
+  Debug.println();
+  Debug.print("::: scsCLF(");
+  Debug.print(filename);
+  Debug.println(") :::");
+  Debug.println();
+
+  VNC1L.write(0x0A); // CLF
   VNC1L.write(0x20);
   VNC1L.print(filename);
   VNC1L.write(0x0D);

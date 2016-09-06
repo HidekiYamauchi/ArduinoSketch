@@ -20,36 +20,34 @@ void setup() {
   Debug.println();
   Debug.println(":::::Setup START:::::");
 
-  pinMode(8, OUTPUT);  // VNC1L RESET pin
+//  pinMode(8, OUTPUT);  // VNC1L RESET pin
+//
+//  Debug.println(":::VNC1L RESET:::");
+//
+//  // VNC1L RESET
+//  digitalWrite( 8, LOW );
+//  delay(1);
+//  digitalWrite( 8, HIGH );
+//
+//  while ( ! checkOnline() ) {
+//    Debug.println(":::VNC1L Starting:::");
+//    delay(1000);
+//  }
+//
+//  Debug.println(":::VNC1L Online:::");
 
-  Debug.println(":::::VNC1L RESET:::::");
-
-  // VNC1L RESET
-  digitalWrite( 8, LOW );
-  delay(1);
-  digitalWrite( 8, HIGH );
-
-  while ( ! checkOnline() ) {
-    Debug.println(":::::VNC1L Starting:::::");
-    delay(1000);
-  }
-
-  Debug.println(":::::VNC1L Online:::::");
-
-  // send IPH
-  VNC1L.write(0x91); // IPH
-  VNC1L.write(0x0D);
-
-  while ( ! returnCheckSCS() ) {
-    Debug.println(":::send IPA/IPH:::");
-    delay(500);
-  }
-  Debug.println(":::done IPA/IPH:::");
-
+//  // send IPH
+//  VNC1L.write(0x91); // IPH
+//  VNC1L.write(0x0D);
+//
+//  while ( ! returnCheckSCS() ) {
+//    Debug.println(":::send IPA/IPH:::");
+//    delay(500);
+//  }
+//  Debug.println(":::done IPA/IPH:::");
+//
   Debug.println(":::::Setup DONE:::::");
 
-  Debug.println();
-  Debug.println(":::::Loop START:::::");
 }
 
 void loop() {

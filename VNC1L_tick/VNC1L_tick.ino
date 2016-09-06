@@ -11,7 +11,7 @@ bool debug = true;
 
 char buff[128];
 char response[64];
-int cnti;
+int cntTick = 0;
 
 void setup() {
   Debug.begin(DEBUG_BAUD_RATE);
@@ -75,7 +75,10 @@ void loop() {
 
 void usbReceive(char* message) {
 
-  if ( strcmp(message, ">") == 0 ) {
+  int strLen = strlen(message);
+//  Debug.print(strLen);
+
+  if ( strcmp(message, ">\r") == 0 ) {
     debugPrint("<<< SCS PROMPT >>>");
   } else {
     debugPrint(message);
@@ -85,16 +88,15 @@ void usbReceive(char* message) {
 
 void tick1() {
   if ( VNC1L.available() > 0 ) {
-    response[cnti] = VNC1L.read();
-    if ( cnti > 30 || response[cnti] == '\r' ) {
-      response[cnti+1] = 0;
-      char msg[cnti+1];
-      strcpy(msg, response);
-      cnti = 0;
+    response[cntTick] = VNC1L.read();
+    if ( cntTick > 30 || response[cntTick] == '\r' ) {
+      response[cntTick+1] = 0;
+      cntTick = 0;
+
       usbReceive(response);
 
     } else {
-      cnti++;
+      cntTick++;
     }
   }
 }

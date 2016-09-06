@@ -61,11 +61,20 @@ void loop() {
     inputValue = Debug.read();
 
     switch (inputValue) {
+      case  98: // b: CD ..
+        scsCD();
+        break;
+      case  99: // c: CD filename
+        scsCD("SAMPLE");
+        break;
       case 100: // d: DIR
         scsDIR();
         break;
       case 102: // f: Firm Ver
         scsFWV();
+        break;
+      case 109: // m: mkdir filename
+        scsMKD("SAMPLE");
         break;
     }
   }
@@ -80,6 +89,14 @@ void usbReceive(char* message) {
 
   if ( strcmp(message, ">\r") == 0 ) {
     debugPrint("<<< SCS PROMPT >>>");
+  } else if ( strcmp(message, "DD2\r") == 0 ) {
+    debugPrint("<<< Disk Detected >>>");
+  } else if ( strcmp(message, "DR2\r") == 0 ) {
+    debugPrint("<<< Disk Removed >>>");
+  } else if ( strcmp(message, "ND\r") == 0 ) {
+    debugPrint("<<< No Disk >>>");
+  } else if ( strcmp(message, "CF\r") == 0 ) {
+    debugPrint("<<< Command Failed >>>");
   } else {
     debugPrint(message);
   }
@@ -121,7 +138,7 @@ bool checkOnline() {
   
   while (VNC1L.available() > 0 ) {
     strLog = VNC1L.readString();
-    debugPrint(strLog.c_str());
+//    debugPrint(strLog.c_str());
     if ( strLog.indexOf("On-Line:") > 0 ) {
       flg = true;
     }
@@ -135,7 +152,7 @@ bool returnCheckSCS() {
 
   while (VNC1L.available() > 0 ) {
     VNC1L.readBytesUntil(0x0d, buff, VNC1L.available());
-    debugPrint(buff);
+//    debugPrint(buff);
     if ( strcmp(buff, ">") == 0 ) {
       flg = true;
     }
@@ -172,6 +189,44 @@ void scsDIR() {
   Debug.println();
 
   VNC1L.write(0x01); // DIR
+  VNC1L.write(0x0D);
+}
+
+void scsCD() {
+  Debug.println();
+  Debug.println("::: scsCD(..) :::");
+  Debug.println();
+
+  VNC1L.write(0x02); // CD
+  VNC1L.write(0x20);
+  VNC1L.write(0x2E);
+  VNC1L.write(0x2E);
+  VNC1L.write(0x0D);
+}
+
+void scsCD(char* filename) {
+  Debug.println();
+  Debug.print("::: scsCD(");
+  Debug.print(filename);
+  Debug.println(") :::");
+  Debug.println();
+
+  VNC1L.write(0x02); // CD
+  VNC1L.write(0x20);
+  VNC1L.print(filename);
+  VNC1L.write(0x0D);
+}
+
+void scsMKD(char* filename) {
+  Debug.println();
+  Debug.print("::: scsMKD(");
+  Debug.print(filename);
+  Debug.println(") :::");
+  Debug.println();
+
+  VNC1L.write(0x06); // MKD
+  VNC1L.write(0x20);
+  VNC1L.print(filename);
   VNC1L.write(0x0D);
 }
 

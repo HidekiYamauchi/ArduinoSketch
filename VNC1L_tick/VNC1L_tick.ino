@@ -2,10 +2,10 @@
 // VNC1L tick test
 
 #define VNC1L_BAUD_RATE 9600
-#define DEBUG_BAUD_RATE 9600
+#define DEBUG_BAUD_RATE 115200
 
 #define Debug Serial
-#define VNC1L Serial1
+#define VNC1L Serial2
 
 bool debug = true;
 
@@ -22,34 +22,51 @@ void setup() {
   Debug.println();
   Debug.println(":::::Setup START:::::");
 
-//  pinMode(8, OUTPUT);  // VNC1L RESET pin
-//
-//  Debug.println(":::VNC1L RESET:::");
-//
-//  // VNC1L RESET
-//  digitalWrite( 8, LOW );
-//  delay(1);
-//  digitalWrite( 8, HIGH );
-//
-//  while ( ! checkOnline() ) {
-//    Debug.println(":::VNC1L Starting:::");
-//    delay(1000);
-//  }
-//
-//  Debug.println(":::VNC1L Online:::");
+  pinMode(8, OUTPUT);  // VNC1L RESET pin
 
-//  // send IPH
-//  VNC1L.write(0x91); // IPH
-//  VNC1L.write(0x0D);
-//
-//  while ( ! returnCheckSCS() ) {
-//    Debug.println(":::send IPA/IPH:::");
-//    delay(500);
-//  }
-//  Debug.println(":::done IPA/IPH:::");
-//
+  Debug.println(":::VNC1L RESET:::");
+
+  // VNC1L RESET
+  digitalWrite( 8, LOW );
+  delay(1);
+  digitalWrite( 8, HIGH );
+
+  while ( ! checkOnline() ) {
+    Debug.println(":::VNC1L Starting:::");
+    delay(1000);
+  }
+
+  Debug.println(":::VNC1L Online:::");
+
+  // send SCS
+  VNC1L.print("SCS"); // SCS
+  VNC1L.write(0x0D);
+  while ( ! returnCheckSCS() ) {
+    Debug.println(":::send SCS:::");
+    delay(500);
+  }
+  Debug.println(":::done SCS:::");
+
+  // send IPA
+  VNC1L.write(0x90); // IPA
+  VNC1L.write(0x0D);
+
+  while ( ! returnCheckSCS() ) {
+    Debug.println(":::send IPA:::");
+    delay(500);
+  }
+  Debug.println(":::done IPA:::");
+
+  // check Disk
+  while ( ! checkDisk() ) {
+    Debug.println(":::check Disk:::");
+    delay(1000);
+  }
+  Debug.println(":::Disk OK:::");
+
+
+
   Debug.println(":::::Setup DONE:::::");
-
 }
 
 void loop() {
@@ -73,6 +90,9 @@ void loop() {
       case 102: // f: Firm Ver
         scsFWV();
         break;
+      case 105: // i: IDD
+        scsIDD();
+        break;
       case 109: // m: mkdir filename
         scsMKD("SAMPLE");
         break;
@@ -94,7 +114,7 @@ void loop() {
 void usbReceive(char* message) {
 
   int strLen = strlen(message);
-//  Debug.print(strLen);
+  Debug.print(strLen);
 
   if ( strcmp(message, ">\r") == 0 ) {
     debugPrint("<<< SCS PROMPT >>>");
@@ -189,6 +209,26 @@ void clearBuffer() {
   for ( int i = 0; i < (sizeof(buff)/sizeof(buff[0])); i++ ) {
     buff[i] = 0;
   }
+}
+
+bool checkDisk() {
+  bool flg = false;
+  String strLog;
+
+  VNC1L.write(0x01); // DIR
+  VNC1L.write(0x0D);
+
+  while (VNC1L.available() > 0 ) {
+    strLog = VNC1L.readStringUntil(0x0d);
+//    Debug.print(">>>>> DEBUG: [");
+//    Debug.print(strLog);
+//    Debug.println("]");
+    if ( strLog == ">" ) {
+      flg = true;
+    }
+  }
+
+  return flg;
 }
 
 
@@ -294,4 +334,14 @@ void scsCLF(char* filename) {
   VNC1L.print(filename);
   VNC1L.write(0x0D);
 }
+
+void scsIDD() {
+  Debug.println();
+  Debug.println("::: scsIDD() :::");
+  Debug.println();
+
+  VNC1L.write(0x0F); // IDD
+  VNC1L.write(0x0D);
+}
+
 
